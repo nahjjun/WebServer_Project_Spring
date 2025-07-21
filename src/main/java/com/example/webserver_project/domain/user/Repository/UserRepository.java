@@ -1,9 +1,6 @@
 package com.example.webserver_project.domain.user.Repository;
-
-
 import com.example.webserver_project.domain.user.Entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 @Repository
