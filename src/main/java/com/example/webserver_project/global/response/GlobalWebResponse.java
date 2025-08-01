@@ -1,6 +1,5 @@
 package com.example.webserver_project.global.response;
 
-import com.example.webserver_project.global.status.SuccessStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
