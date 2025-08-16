@@ -7,8 +7,10 @@ import com.example.webserver_project.domain.user.Dto.UserResponseDto;
 import com.example.webserver_project.domain.user.Service.UserService;
 import com.example.webserver_project.global.response.GlobalWebResponse;
 import com.example.webserver_project.global.status.SuccessStatus;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +22,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
+//    // JWT 정상적으로 .env 설정 되었는지 디버깅용 코드
+//    @Value("${jwt.secret:__missing__}")
+//    private String secret;
+//
+//    @PostConstruct
+//    void check() {
+//        System.out.println("JWT secret = " + secret);
+//    }
+
+
+
     private final UserService userService;
 
 //    @Autowired

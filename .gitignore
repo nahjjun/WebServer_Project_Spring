@@ -43,3 +43,4 @@ out/
 *.iml
 /build/
 application.yml
+.env
