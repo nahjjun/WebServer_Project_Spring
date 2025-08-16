@@ -15,7 +15,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // CSRF 비활성화
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**").permitAll()  // 로그인/회원가입은 인증 없이 허용
+                        .requestMatchers("/users/join", "/users/login").permitAll()  // 로그인/회원가입은 인증 없이 허용
                         .anyRequest().authenticated()
                 );
         return http.build();

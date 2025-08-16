@@ -16,7 +16,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // DB의 AUTO_INCREMENT와 같은 방식
     private Long id;
 
-
+    @Column(name="name")
     private String name;
     private String password;
     private String email;

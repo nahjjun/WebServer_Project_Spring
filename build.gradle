@@ -29,6 +29,20 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // JWT (권장 스코프)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.7'
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.7'
+
+    // ModelMapper 최신
+    implementation 'org.modelmapper:modelmapper:3.2.4'
+
+    // dotenv 라이브러리
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
