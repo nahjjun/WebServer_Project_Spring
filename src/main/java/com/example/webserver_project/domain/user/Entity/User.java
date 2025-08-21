@@ -1,6 +1,7 @@
 package com.example.webserver_project.domain.user.Entity;
 
 import com.example.webserver_project.domain.user.Dto.JoinRequestDto;
+import com.example.webserver_project.global.jwt.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,10 +17,18 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // DB의 AUTO_INCREMENT와 같은 방식
     private Long id;
 
-    @Column(name="name")
+    @Column(name="name", nullable=false)
     private String name;
+
+    @Column(name="password", nullable=false)
     private String password;
+
+    @Column(name="email", length = 50, updatable = false)
     private String email;
+
+    @Enumerated(EnumType.STRING) // Enum 이름 그대로가 DB에 저장되므로, RoleType에서 굳이 따로 변수를 지정해주지 않아도 된다.
+    @Column(name = "ROLE", nullable = false)
+    private RoleType role;
 
     public static User from(JoinRequestDto dto){
         return User.builder()
@@ -28,4 +37,13 @@ public class User {
                 .email(dto.getEmail())
                 .build();
     }
+
+    public void updatePassword(String password){
+        this.password = password;
+    }
+
+    public void updateName(String name){
+        this.name = name;
+    }
+
 }
