@@ -1,9 +1,6 @@
 package com.example.webserver_project.domain.user.Controller;
 
-import com.example.webserver_project.domain.user.Dto.DeleteRequestDto;
-import com.example.webserver_project.domain.user.Dto.JoinRequestDto;
-import com.example.webserver_project.domain.user.Dto.LoginRequestDto;
-import com.example.webserver_project.domain.user.Dto.UserResponseDto;
+import com.example.webserver_project.domain.user.Dto.*;
 import com.example.webserver_project.domain.user.Service.UserService;
 import com.example.webserver_project.global.response.GlobalWebResponse;
 import com.example.webserver_project.global.status.SuccessStatus;
@@ -65,7 +62,7 @@ public class UserController {
     // 로그인
     // 로그인 성공 시 로그인된 사용자 객체를 return해준다,
     @PostMapping("/login")
-    public ResponseEntity<GlobalWebResponse<UserResponseDto>> login(@RequestBody @Valid LoginRequestDto loginRequest) {
+    public ResponseEntity<GlobalWebResponse<TokenResponseDto>> login(@RequestBody @Valid LoginRequestDto loginRequest) {
         UserResponseDto user = userService.login(loginRequest);
         System.out.println("해당 계정 존재");
         GlobalWebResponse<UserResponseDto> response = GlobalWebResponse.success(SuccessStatus.LoginOk.getCode(), SuccessStatus.LoginOk.getMessage(), user);
