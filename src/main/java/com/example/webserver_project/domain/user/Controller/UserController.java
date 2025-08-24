@@ -63,9 +63,9 @@ public class UserController {
     // 로그인 성공 시 로그인된 사용자 객체를 return해준다,
     @PostMapping("/login")
     public ResponseEntity<GlobalWebResponse<TokenResponseDto>> login(@RequestBody @Valid LoginRequestDto loginRequest) {
-        UserResponseDto user = userService.login(loginRequest);
+        TokenResponseDto user = userService.login(loginRequest);
         System.out.println("해당 계정 존재");
-        GlobalWebResponse<UserResponseDto> response = GlobalWebResponse.success(SuccessStatus.LoginOk.getCode(), SuccessStatus.LoginOk.getMessage(), user);
+        GlobalWebResponse<TokenResponseDto> response = GlobalWebResponse.success(SuccessStatus.LoginOk.getCode(), SuccessStatus.LoginOk.getMessage(), user);
         return ResponseEntity.status(SuccessStatus.LoginOk.getStatus()).body(response);
     }
 
