@@ -4,6 +4,7 @@ package com.example.webserver_project.global.jwt;
 
 import com.example.webserver_project.domain.user.Dto.JwtUserInfoDto;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -23,6 +24,7 @@ public class JwtUtil {
     private final Key key; // SecretKey를 담고 있는 객체
     private final long accessTokenExpTime; // 토큰 만료까지 남은 시간(초) 
 
+    // application.yml에 저장되어있는 secret key와 만료 시간을 @Value로 값에 할당해준다.
     public JwtUtil(
         @Value("${jwt.secret}") final String secretKey,
         @Value("${jwt.expiration_time}") final long accessTokenExpTime
@@ -78,14 +80,33 @@ public class JwtUtil {
 
 
     // JWT Token에서 User ID를 추출하는 함수
-    public Long getUserId(String Token){
+    public Long getUserId(String token){
         return parseClaims(token).get("userId", Long.class);
     }
 
+    // JWT Token에서 Claims를 추출하는 함수
+    // Jwts : JWT를 다루기 위한 유틸리티 클래스
     public Claims parseClaims(String accessToken){
-
+        return Jwts.parser() // parser() : JWT를 파싱할 준비 객체(JwtParserBuilder)를 반환하는 함수
+                             // JwtParserBuilder : 빌더 패턴을 사용해서 parser의 옵션들(서명키, Clock, 압축 설정 등)을 지정할 수 있는 객체
+                .setSigningKey(key) // setSigningKey(): 토큰 서명을 검증하기 위한 비밀 키를 설정하는 함수.(서명 검증 완료 시, JwtParserBuilder 반환)
+                .build() // 위에서 지금까지 설정한 옵션들을 기반으로 실제 JwtParser 객체를 생성한다.
+                         // JwtParser : JWT 문자열을 실제로 parsing하고, 클레임 검증 등을 수행할 수 있는 객체
+                .parseClaimsJws(accessToken) // parseClaimsJws(): 전달된 문자열인 accessToken을 JWS(Signed JWT)로 해석하는 함수
+                                             // 내부적으로 Signature를 검증하고, Payload를 Claims로 변환해준다.(반환값 Jws<Claims>)
+                                             // JWS : Header.Payload.Signature 형태의 서명된 JWT를 뜻함
+                .getBody(); // Jws<Claims> 객체에서 Payload만 꺼내오는 함수 (Claims return)
     }
 
+
+    // JWT 검증하는 함수
+    // token으로부터 Jws<Claims> 객체 가져온다. 만약 해당 과정이 실패하면 null을 반환하는게 아니라 예외가 발생하므로, 아래 코드의 if문은 필요 없다.
+    // JWT는 Filter 과정에서 예외 처리를 끝낸다. 전역 예외 처리로 처리하지 않는다.
+    public boolean isValidToken(String token) {
+        Jws<Claims> c = Jwts.parser().setSigningKey(key).build().parseClaimsJws(token);
+        // if (c == null) return false;
+        return true;
+    }
 
 
 }

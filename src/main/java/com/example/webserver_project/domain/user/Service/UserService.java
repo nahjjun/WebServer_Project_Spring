@@ -1,9 +1,6 @@
 package com.example.webserver_project.domain.user.Service;
 
-import com.example.webserver_project.domain.user.Dto.DeleteRequestDto;
-import com.example.webserver_project.domain.user.Dto.JoinRequestDto;
-import com.example.webserver_project.domain.user.Dto.LoginRequestDto;
-import com.example.webserver_project.domain.user.Dto.UserResponseDto;
+import com.example.webserver_project.domain.user.Dto.*;
 import com.example.webserver_project.domain.user.Entity.User;
 import com.example.webserver_project.domain.user.Repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -35,7 +32,7 @@ public class UserService {
 
     // 로그인 진행 함수
     @Transactional
-    public UserResponseDto login(LoginRequestDto loginRequest) {
+    public TokenResponseDto login(LoginRequestDto loginRequest) {
         // 1. 이메일 있는지 확인
         if(!userRepository.existsByEmail(loginRequest.getEmail())) {
             // 1-1. 이메일이 없는 경우, 잘못된 이메일임을 클라이언트에게 보냄
@@ -50,7 +47,9 @@ public class UserService {
 
         // 3. 전부 맞은 경우, UserResponseDto에 내용을 담아서 반환한다.
         User user = userRepository.findByEmail(loginRequest.getEmail());
-        return UserResponseDto.of(user);
+        UserResponseDto userResponseDto = UserResponseDto.of(user);
+
+        return ;
     }
 
     // 회원 탈퇴 함수
