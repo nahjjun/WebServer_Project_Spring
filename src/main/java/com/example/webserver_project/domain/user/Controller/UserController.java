@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users")
+@RequestMapping("/user")
 public class UserController {
 //    // JWT 정상적으로 .env 설정 되었는지 디버깅용 코드
 //    @Value("${jwt.secret:__missing__}")
