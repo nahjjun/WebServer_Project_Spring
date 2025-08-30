@@ -80,8 +80,8 @@ public class JwtUtil {
 
 
     // JWT Token에서 User ID를 추출하는 함수
-    public Long getUserId(String token){
-        return parseClaims(token).get("userId", Long.class);
+    public String getUserEmail(String token){
+        return parseClaims(token).get("email", String.class);
     }
 
     // JWT Token에서 Claims를 추출하는 함수
