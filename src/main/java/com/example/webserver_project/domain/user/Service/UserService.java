@@ -5,12 +5,14 @@ import com.example.webserver_project.domain.user.Entity.User;
 import com.example.webserver_project.domain.user.Repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // 회원가입 진행 함수
     @Transactional
@@ -22,6 +24,8 @@ public class UserService {
 
         // 2. 중복이 안된 이메일이라면, 해당 User Entity 객체를 생성해서 repository로 save한다,
         User user = User.from(userRequestDto);
+        // PasswordEncoder로 비밀번호 인코딩
+        user.setPassword(passwordEncoder.encode(userRequestDto.getPassword())); // user 객체에 인코딩된 비밀번호 저장
         User savedUser = userRepository.save(user); // save 성공 시, 인자로 넣은 객체와 동일한 데이터를 갖고 있는 객체를 다시 반환함
 
         // 3. save 성공 시 ResponseDto에 해당 객체의 데이터 담는다.
@@ -30,27 +34,6 @@ public class UserService {
     }
 
 
-    // 로그인 진행 함수
-    @Transactional
-    public TokenResponseDto login(LoginRequestDto loginRequest) {
-        // 1. 이메일 있는지 확인
-        if(!userRepository.existsByEmail(loginRequest.getEmail())) {
-            // 1-1. 이메일이 없는 경우, 잘못된 이메일임을 클라이언트에게 보냄
-            throw new IllegalArgumentException("해당 이메일이 존재하지 않습니다!");
-        }
-
-        // 2. 이메일이 있는 경우, 비밀번호가 맞는지 확인한다.
-        if(!userRepository.existsByEmailAndPassword(loginRequest.getEmail(), loginRequest.getPassword())) {
-            // 2-1. 일치하지 않는 경우, 잘못된 비밀번호임을 클라이언트에게 보냄
-            throw new IllegalArgumentException("비밀번호가 옳지 않습니다!");
-        }
-
-        // 3. 전부 맞은 경우, UserResponseDto에 내용을 담아서 반환한다.
-        User user = userRepository.findByEmail(loginRequest.getEmail());
-        UserResponseDto userResponseDto = UserResponseDto.of(user);
-
-        return ;
-    }
 
     // 회원 탈퇴 함수
     @Transactional // 이 어노테이션을 붙여주지 않으면 오류 발생함

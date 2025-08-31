@@ -28,8 +28,6 @@ public class UserController {
 //        System.out.println("JWT secret = " + secret);
 //    }
 
-
-
     private final UserService userService;
 
 //    @Autowired

@@ -73,8 +73,26 @@ public class SecurityConfig {
             // ㄴ> http.addFilterBefore("추가할 필터", 기존 필터)
 
         // 5. 예외 처리 핸들러 설정 - 인증 실패 및 접근 거부 예외를 처리하는 핸들러를 설정함
+        http.exceptionHandling(e -> e
+                .authenticationEntryPoint(authenticationEntryPoint) // authenticationEntryPoint(401) : 인증 자체가 없는 상태에서 보호된 자원에 접근할 때 사용하는 핸들러
+                                            // ㄴ> 내부적으로 commence 함수를 오버라이드 해놓았다.
+                .accessDeniedHandler(accessDeniedHandler)); // accessDeniedHandler(403) : 인중은 됐지만 권한이 부족한 경우 사용되는 핸들러
+                                            // ㄴ> 내부적으로 handler 함수 정의해놓음
 
+        // 6. 권한 규칙 작성
+            // 1) 화이트 리스트에 있는 경로는 누구나 접근할 수 있도록 허용함
+            // 2) 나머지 모든 경로는 @PreAuthorize 등의 메서드 수준 보안을 사용하여 접근을 제어함
+        http.authorizeHttpRequests(authorize -> {
+            authorize
+                    .requestMatchers(AUTH_WHITELIST).permitAll()
+                    .anyRequest().permitAll();
+        });
+        // authorizeHttpRequests() : Spring Security에서 URL 요청 별 인가(Authorization, 권한 부여)규칙을 설정하는 DSL 함수
+        // 파라미터 : Customizer<AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry>
+            // ㄴ> 의미 : 인가 규칙 빌터(AuthorizationManagerRequestMatcherRegistry)를 커스터마이징하라
+        // .requestMatchers(...) : URL 패턴, HttpMethod, RequestMatcher 등을 지정할 수 있음
 
-
+        return http.build(); // build() 함수로 HttpSecurity 객체를 빌드하여 SecurityFilterChain 객체를 생성함
     }
+
 }
