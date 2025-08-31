@@ -9,8 +9,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByEmail(String email);
     boolean existsByEmail(String email); // 이메일로 중복 확인하는 함수
-    boolean existsByEmailAndPassword(String email, String password); // 해당 이메일과 비밀번호가 전부 일치하는지 확인하는 함수
-    boolean existsByNameAndEmailAndPassword(String name, String email, String password);
 
     long deleteByEmail(String email);
 
