@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 @Builder
-public class UserResponseDto {
+public class JoinResponseDto {
     @NotBlank
     private final Long id;
 
@@ -21,8 +21,8 @@ public class UserResponseDto {
     @NotBlank
     private final String email;
 
-    public static UserResponseDto of(User user){
-        return UserResponseDto.builder()
+    public static JoinResponseDto of(User user){
+        return JoinResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
