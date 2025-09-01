@@ -8,13 +8,17 @@ import com.example.webserver_project.global.jwt.JwtUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -93,6 +97,21 @@ public class SecurityConfig {
         // .requestMatchers(...) : URL 패턴, HttpMethod, RequestMatcher 등을 지정할 수 있음
 
         return http.build(); // build() 함수로 HttpSecurity 객체를 빌드하여 SecurityFilterChain 객체를 생성함
+    }
+
+    // AuthenticationManager를 Bean으로 등록해야 컨트롤러/서비스에서 주입이 가능함
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    // BCryptPasswordEncoder : Spring Security 프레임워크에서 제공하는 비밀번호를 암호화하는 데 사용할 수 있는 메서드를 가진 클래스
+    // BCrypt 해싱 함수를 사용해서 비밀번호를 인코딩할 수 있음
+    // 패스워드 인코더도 Bean으로 등록하기 => Spring Security가 AuthenticationProvider -> UserDetailsService -> PasswordEncoder 과정을 처리해줄 때
+    // 사용 할 수 있도록 하기 위함
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
     }
 
 }
