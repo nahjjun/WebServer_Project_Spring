@@ -1,17 +1,16 @@
 package com.example.webserver_project.global.config;
 
-import com.example.webserver_project.domain.user.Service.CustomUserDetailsService;
+import com.example.webserver_project.global.security.CustomUserDetailsService;
 import com.example.webserver_project.global.exception.UserAccessDeniedHandler;
 import com.example.webserver_project.global.exception.UserAuthenticationEntryPoint;
-import com.example.webserver_project.global.jwt.JwtAuthFilter;
-import com.example.webserver_project.global.jwt.JwtUtil;
+import com.example.webserver_project.global.security.JwtAuthFilter;
+import com.example.webserver_project.global.jwt.JwtProvider;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -31,8 +30,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @AllArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService customUserDetailsService; // username으로 DB에서 사용자를 조회하여 UserDetails로 반환해주는 서비스 클래스
-    private final JwtUtil jwtUtil;
+    private final JwtAuthFilter jwtAuthFilter;
+    private final CorsConfig corsConfig;
+
     private final UserAccessDeniedHandler accessDeniedHandler; // 인증은 됐지만 사용자의 권한(role)이 부족한 경우 사용할 핸들러
     private final UserAuthenticationEntryPoint authenticationEntryPoint; // 미인증된 사용자가 보호된 리소스에 접근 시 사용할 핸들러
 
@@ -73,7 +73,7 @@ public class SecurityConfig {
         // 4. JWT 필터 등록
         // UsernamePasswordAuthenticationFilter 앞에 직접 만든 JwtAuthFilter를 넣는다
         // 해당 필터로 JWT를 통한 인증 처리를 수행하게 한다.
-        http.addFilterBefore(new JwtAuthFilter(customUserDetailsService, jwtUtil), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
             // ㄴ> http.addFilterBefore("추가할 필터", 기존 필터)
 
         // 5. 예외 처리 핸들러 설정 - 인증 실패 및 접근 거부 예외를 처리하는 핸들러를 설정함

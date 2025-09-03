@@ -1,24 +1,30 @@
-package com.example.webserver_project.global.jwt;
+package com.example.webserver_project.global.security;
 
-import com.example.webserver_project.domain.user.Service.CustomUserDetailsService;
+import com.example.webserver_project.global.jwt.JwtProvider;
+import com.example.webserver_project.infra.redis.RedisUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+
+@Slf4j
 @RequiredArgsConstructor
+@Component
 public class JwtAuthFilter extends OncePerRequestFilter {
     // 사용자 username(email)로 UserDetails 객체를 가져오기 위해 사용하는 UserDetailsService
     private final CustomUserDetailsService customUserDetailsService;
-    private final JwtUtil jwtUtil; // jwt 인증 등의 작업을 하기 위한 jwtUtil 객체
+    private final JwtProvider jwtProvider; // jwt 인증 등의 작업을 하기 위한 jwtUtil 객체
+    private final RedisUtil redisUtil;
 
     // JWT 검증 필터 수행
     // JwtAuthFilter 자체적으로 사용자를 검증한다
@@ -43,13 +49,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 //      "Authorization: Bearer eyJhbGci..."
                 // "Bearer " 부분은 인증 스키마이기 때문에, 해당 부분을 자르고 순수한 JWT 문자열을 구하기 위해 substring을 하는 것
 
-            // JWT 유효성 검증
-            if(jwtUtil.isValidToken(token)){  // token에서 Jws<Claims> 객체를 가져옴으로써 유효성을 검증하는 함수
-                // token의 Jws<Claims> 객체에서 사용자 이메일을 가져온다
-                String userEmail = jwtUtil.getUserEmail(token);
+            // 3. JWT 유효성 검증
+            if(jwtProvider.validateToken(token)){  // access token에서 Jws<Claims> 객체로부터 Claims를 가져옴으로써 유효성을 검증하는 함수
+                // 4. JWT 토큰의 유효성이 검증되었다면, 해당 JWT access 토큰의 jti(jwt id)가 Redis의 블랙리스트에 있는지 확인한다.
+                // jwtProvider를 이용하여 해당 토큰의 jti를 얻어온 뒤, 해당 jti로 redis에 있는 블랙리스트로 등록되어있는지 여부를 확인한다.
+                if(redisUtil.isBlacklisted(jwtProvider.getTokenId(token))){
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access Token is blacklisted");
+                        // 해당 토큰이 블랙리스트인 경우, response로 Error를 전송한다.
+                    return;
+                }
+
+                // access token이 정상적인 토큰이라면, 해당 토큰의 Claims 객체에서 사용자 아이디를 가져온다
+                Long userId = jwtProvider.getUserId(token);
 
                 // 사용자와 토큰이 일치할 시, email로 userDetails 객체 생성
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(userEmail);
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(String.valueOf(userId));
 
                 // 성공적으로 userDetails를 만들었다면, 접근 권한 인증용 Token을 생성한다.
                 // UsernamePasswordAuthenticationToken은 Authentication 구현체이다.
@@ -74,5 +88,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // filterChain의 doFilter() 함수로 다음 필터로 request와 response를 넘긴다
         filterChain.doFilter(request, response);
     }
-
 }

@@ -1,4 +1,4 @@
-package com.example.webserver_project.domain.user.Dto;
+package com.example.webserver_project.global.security;
 
 // Jwt 로직 내부에서 인증 유저 정보를 저장해 둘 dto
 
