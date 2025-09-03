@@ -1,4 +1,4 @@
-package com.example.webserver_project.domain.user.Dto;
+package com.example.webserver_project.domain.Auth.Dto.request;
 
 
 import jakarta.validation.constraints.Email;

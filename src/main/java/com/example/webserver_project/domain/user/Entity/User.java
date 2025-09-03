@@ -1,6 +1,6 @@
 package com.example.webserver_project.domain.user.Entity;
 
-import com.example.webserver_project.domain.user.Dto.JoinRequestDto;
+import com.example.webserver_project.domain.Auth.Dto.request.JoinRequestDto;
 import com.example.webserver_project.global.jwt.RoleType;
 import jakarta.persistence.*;
 import lombok.*;

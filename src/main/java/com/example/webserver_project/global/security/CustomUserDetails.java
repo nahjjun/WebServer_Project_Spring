@@ -1,5 +1,6 @@
-package com.example.webserver_project.domain.user.Dto;
+package com.example.webserver_project.global.security;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,6 +16,7 @@ import java.util.List;
     // ㄴ> SpringContext : 로그인 후 인증된 사용자의 정보들을 저장하는 인터페이스
 
 @Getter
+@Builder
 @RequiredArgsConstructor
 public class CustomUserDetails implements UserDetails {
     private final JwtUserInfoDto user; // JWT 인증 유저 정보를 담고 있는 DTO
@@ -39,7 +41,7 @@ public class CustomUserDetails implements UserDetails {
     }
 
     // 인증 시 로그인 식별자 반환
-    // 사용자 이메일 반환
+    // 사용자 이메일 반환 (로그인은 이메일로 진행함)
     @Override
     public String getUsername(){
         return user.getEmail();
