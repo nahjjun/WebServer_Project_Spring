@@ -5,6 +5,7 @@ package com.example.webserver_project.global.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -110,8 +111,11 @@ public class JwtProvider {
             // 즉, 중복 방지/재사용 공격 방어에 도움이 된다.
     }
 
-    // JWT Token에서 만료 시간(exp)을 추출하는 함수
-    public Date getExpiration(String token){
-        return parseClaims(token).getExpiration();
+    // JWT Token에서 만료 시간(exp)을 밀리세컨드 단위로 추출하는 함수
+    public long getExpirationMiliSecond(String token){
+        return parseClaims(token).getExpiration().getTime();
+            // Claims.getExpiration()은 Date 객체를 반환한다.
+            // Date 객체의 getTime() 함수는 밀리세컨드 단위로 시간을 반환한다.
     }
+
 }
