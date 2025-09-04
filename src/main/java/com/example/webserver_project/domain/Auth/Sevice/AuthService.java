@@ -7,6 +7,7 @@ import com.example.webserver_project.global.exception.CustomException;
 import com.example.webserver_project.global.security.CustomUserDetails;
 import com.example.webserver_project.infra.redis.RedisUtil;
 import com.example.webserver_project.global.jwt.JwtProvider;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -97,9 +98,14 @@ public class AuthService {
     private String getRefreshTokenFromCookie(HttpServletRequest request){
         if(request.getCookies() == null) return null; // 요청에 쿠키가 없으면
 
+        for(Cookie cookie : request.getCookies()) {
+            // 쿠키에 refreshToken이 있다면, 해당 쿠키값 반환
+            if("refreshToken".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
-
-
 
 
     // 사용자 정보를 인증하는 함수 (이메일, 비밀번호 검증)
