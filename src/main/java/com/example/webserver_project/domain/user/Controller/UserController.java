@@ -1,13 +1,12 @@
 package com.example.webserver_project.domain.user.Controller;
 
-import com.example.webserver_project.domain.user.Dto.*;
+import com.example.webserver_project.domain.user.Dto.request.DeleteRequestDto;
+import com.example.webserver_project.domain.user.Dto.request.JoinRequestDto;
+import com.example.webserver_project.domain.user.Dto.response.JoinResponseDto;
 import com.example.webserver_project.domain.user.Service.UserService;
 import com.example.webserver_project.global.response.GlobalWebResponse;
-import com.example.webserver_project.global.status.SuccessStatus;
-import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,13 +33,20 @@ public class UserController {
 
     private final UserService userService;
 
-//    @Autowired
-//    public UserController(UserService userService){
-//        this.userService = userService;
-//    }
-// ㄴ> @RequiredArgsConstructor가 final 멤버 변수를 전부 생성해주므로, Autowired를 사용할
-    // 필요가 없음!
 
+
+// UserService의 join() 함수를 이용하여 회원가입 진행
+    @PostMapping("/join")
+    public ResponseEntity<GlobalWebResponse<JoinResponseDto>> join(@RequestBody @Valid JoinRequestDto joinRequestDto){
+        JoinResponseDto joinResponseDto = userService.join(joinRequestDto);
+
+        // 만약 RESTful API 규약을 엄격하게 지킨다면, Location 헤더를 사용해서 HTTP 표준인 "201 Created" 응답의 관례를 지키면 된다.
+        GlobalWebResponse<JoinResponseDto> response = GlobalWebResponse.success(SuccessStatus.JoinOk.getCode(),  SuccessStatus.JoinOk.getMessage(), joinResponseDto);
+
+        return ResponseEntity
+                .status(SuccessStatus.JoinOk.getStatus())
+                .body(response);
+    }
 
     // 회원 탈퇴
     @PostMapping("/delete")
