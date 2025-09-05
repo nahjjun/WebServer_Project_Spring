@@ -41,20 +41,15 @@ public class UserController {
         JoinResponseDto joinResponseDto = userService.join(joinRequestDto);
 
         // 만약 RESTful API 규약을 엄격하게 지킨다면, Location 헤더를 사용해서 HTTP 표준인 "201 Created" 응답의 관례를 지키면 된다.
-        GlobalWebResponse<JoinResponseDto> response = GlobalWebResponse.success(SuccessStatus.JoinOk.getCode(),  SuccessStatus.JoinOk.getMessage(), joinResponseDto);
-
-        return ResponseEntity
-                .status(SuccessStatus.JoinOk.getStatus())
-                .body(response);
+        GlobalWebResponse<JoinResponseDto> response = GlobalWebResponse.success("회원가입 성공", joinResponseDto);
+        return ResponseEntity.ok(response);
     }
 
     // 회원 탈퇴
     @PostMapping("/delete")
     public ResponseEntity<GlobalWebResponse<String>> delete(@RequestBody @Valid DeleteRequestDto deleteRequest) {
         userService.delete(deleteRequest);
-        GlobalWebResponse<String> response = GlobalWebResponse.success(SuccessStatus.DeleteOk.getCode(), SuccessStatus.DeleteOk.getMessage(), null);
-        return ResponseEntity
-                .status(SuccessStatus.DeleteOk.getStatus())
-                .body(response);
+        GlobalWebResponse<String> response = GlobalWebResponse.success("회원 탈퇴 성공", null);
+        return ResponseEntity.ok(response);
     }
 }

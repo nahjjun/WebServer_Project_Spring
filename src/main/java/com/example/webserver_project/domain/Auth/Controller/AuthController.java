@@ -5,6 +5,7 @@ import com.example.webserver_project.domain.Auth.Dto.request.LoginRequestDto;
 import com.example.webserver_project.domain.Auth.Dto.response.LoginResponseDto;
 import com.example.webserver_project.domain.Auth.Sevice.AuthService;
 import com.example.webserver_project.global.response.GlobalWebResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,14 +29,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<GlobalWebResponse<LoginResponseDto>> login(@RequestBody @Valid LoginRequestDto loginRequestDto, HttpServletResponse response) {
         LoginResponseDto dto = authService.login(loginRequestDto, response);
-        GlobalWebResponse<LoginResponseDto> res = GlobalWebResponse.success(, , dto);
-        return ResponseEntity.ok().body(res);
+        return ResponseEntity.ok(GlobalWebResponse.success("로그인 성공", dto));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<GlobalWebResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response){
+        authService.logout(request, response);
+        return ResponseEntity.ok(GlobalWebResponse.success("로그아웃 성공"));
+    }
 
     @PostMapping("/refresh")
-    public ResponseEntity<GlobalWebResponse<String>> refresh(@RequestBody @Valid RefreshRequestDto refreshRequestDto, HttpServletResponse response) {
-
+    public ResponseEntity<GlobalWebResponse<Void>> reissueAccessToken(HttpServletRequest request, HttpServletResponse response) {
+        authService.reissueAccessToken(request, response);
+        return ResponseEntity.ok(GlobalWebResponse.success("Access Token 재발급 성공"));
     }
 
 

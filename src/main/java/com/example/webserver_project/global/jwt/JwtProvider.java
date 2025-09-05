@@ -26,8 +26,8 @@ public class JwtProvider {
     // application.yml에 저장되어있는 secret key와 만료 시간을 @Value로 값에 할당해준다.
     public JwtProvider(
         @Value("${jwt.secret}") final String secretKey,
-        @Value("${jwt.access-token-expiration_time}") final long accessTokenExpTime,
-        @Value("${jwt.refresh-token-expiration_time") final long refreshTokenExpTime
+        @Value("${jwt.access-token-expiration-time}") final long accessTokenExpTime,
+        @Value("${jwt.refresh-token-expiration-time}") final long refreshTokenExpTime
     ) {
         // 내가 설정한 Base64 형식의 secretKey를 BASE64 방식으로 디코딩한다.
         // 이후, 해당 값을 HMAC SHA 알고리즘을 사용한 키로 변환한다.
@@ -48,6 +48,12 @@ public class JwtProvider {
     public String createRefreshToken(long userId){
         return createToken(userId, refreshTokenExpTime);
     }
+
+    // refresh 토큰을 회전시킬 때, 회전시키기 전 토큰의 expireTime을 그대로 사용하기 위해 오버로드
+    public String createRefreshToken(long userId, long expireTime){
+        return createToken(userId, expireTime);
+    }
+
 
     // JWT를 생성하는 내부 함수
     // JWT 생성 과정

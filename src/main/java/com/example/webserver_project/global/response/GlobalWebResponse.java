@@ -28,6 +28,18 @@ public class GlobalWebResponse<T> {
 
     // 성공 응답 생성 함수
     // 유형별로 다른 code, 메시지를 받기 위해 인자로 해당 값들 받기
+    public static <T>GlobalWebResponse<T> success(T result){
+        return new GlobalWebResponse<T>(true, "200", "요청이 성공적으로 처리되었습니다.", result);
+    }
+    public static <T>GlobalWebResponse<T> success(String message){
+        return new GlobalWebResponse<T>(true, "200", message, null);
+    }
+    public static <T>GlobalWebResponse<T> success(String code, String message){
+        return new GlobalWebResponse<T>(true, code, message, null);
+    }
+    public static <T>GlobalWebResponse<T> success(String message, T result){
+        return new GlobalWebResponse<T>(true, "200", message, result);
+    }
     public static <T>GlobalWebResponse<T> success(String code, String message, T result){
         return new GlobalWebResponse<T>(true, code, message, result);
     }

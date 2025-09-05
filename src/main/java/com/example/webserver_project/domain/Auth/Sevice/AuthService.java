@@ -20,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +39,7 @@ public class AuthService {
      */
     public LoginResponseDto login(LoginRequestDto loginRequestDto, HttpServletResponse response){
         CustomUserDetails principal = validateUser(loginRequestDto); // 사용자 인증 후, 해당 authentication의 principal 받아오기
-        setRefreshTokenToRedisAndSetResponse(principal, response); // redis에 해당 사용자의 refreshToken을 저장한다.
+        issueTokensAndSetResponse(principal, response); // redis에 해당 사용자의 refreshToken을 저장한다.
 
         // 사용자 정보를 LoginResponseDto에 담아서 return
         return LoginResponseDto.builder()
@@ -49,6 +50,57 @@ public class AuthService {
     }
 
 
+    /*
+    - 로그아웃 처리 메서드
+    => 요청 헤더에서 액세스 토큰 추출
+    => Redis 블랙리스트에 저장
+    => refresh token redis에서 삭제하여 재사용 차단
+    @param request : http 요청 객체(헤더에서 access token, userId get용)
+    @param response : http 응답 객체(refresh 쿠키 삭제용)
+    @throws CustomException : 액세스 토큰이 유효하지 않거나 없을 경우 {@link AuthErrorCode#INVALID_ACCESS_TOKEN}
+     */
+    public void logout(HttpServletRequest request, HttpServletResponse response){
+        // Authorization 헤더에서 accessToken 가져오기
+        String accessToken = extractAccessTokenFromHeader(request);
+        if(accessToken == null || !jwtProvider.validateToken(accessToken)){
+            throw new CustomException(AuthErrorCode.INVALID_ACCESS_TOKEN);
+        }
+
+        // accessToken에서 userId 가져오기 (redis 저장소 관리용)
+        Long userId = jwtProvider.getUserId(accessToken);
+
+        // accessToken에서 jti 가져오기 (블랙리스트 설정용)
+        String jti = jwtProvider.getTokenId(accessToken);
+
+        // 해당 accessToken redis의 블랙리스트에 등록하기
+        long expireTime = jwtProvider.getExpirationMiliSecond(accessToken) - System.currentTimeMillis();
+        String jtiKey = RedisUtil.BLACKLIST_TOKEN_PREFIX + jti;
+        redisUtil.setBlacklist(jtiKey, expireTime);
+
+        // userId를 이용해서 redis에서 refreshToken을 제거한다.
+        String userIdKey = RedisUtil.REFRESH_TOKEN_PREFIX + userId;
+        redisUtil.deleteData(userIdKey);
+    }
+    
+
+    /*
+    - request의 Authorization 헤더에서 accessToken를 꺼내오는 함수
+    @param request : http 요청 헤더
+    @return accessToken
+     */
+    private String extractAccessTokenFromHeader(HttpServletRequest request){
+        // Authorization 헤더 꺼내오기
+        String bearer = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+        // 꺼내온 인증 헤더가 Bearer로 시작하는지 확인
+        if(bearer != null && bearer.startsWith("Bearer ")){
+            return bearer.substring(7); // "Bearer "라는 7개의 단어 자르기
+        }
+        return null;
+    }
+    
+    
+    
 
     /*
     - 토큰 재발급 함수 - Refresh 토큰으로 새 Access(+회전된 Refresh) 발급
@@ -59,10 +111,11 @@ public class AuthService {
     @param request : Http 요청 객체 (쿠키에서 refresh token 추출용)
     @param response : Http 응답 객체 (새로운 액세스 토큰 설정용)
      */
+    // 디벨롭 가능 부분 - refreshToken 관련 absolute, Idle 개념 적용시키기
     @Transactional
-    public void refresh(HttpServletRequest request, HttpServletResponse response) {
+    public void reissueAccessToken(HttpServletRequest request, HttpServletResponse response) {
         // 1. 쿠키에서 refreshToken 추출
-        String refreshToken = getRefreshTokenFromCookie(request);
+        String refreshToken = extractRefreshTokenFromCookie(request);
         if(refreshToken == null || !jwtProvider.validateToken(refreshToken)) {
             // refreshToken이 null이거나 유효한 refreshToken이 아니면 예외처리
             // refreshToken이 만료된 상태라면, 재로그인을 시킨다.
@@ -72,20 +125,37 @@ public class AuthService {
         // 2. 사용자 ID 추출
         Long userId = jwtProvider.getUserId(refreshToken);
 
+        // refreshToken의 redis에서 사용되는 redisKey
+        String redisKey = RedisUtil.REFRESH_TOKEN_PREFIX + userId;
+
         // 3. redis에 저장된 refresh Token과 쿠키에서 추출한 refresh Token 비교
-        String storedToken = redisUtil.getData(RedisUtil.REFRESH_TOKEN_PREFIX + userId);
-            // ㄴ> RedisUtil.REFRESH_TOKEN_PREFIX + userId 형식으로 된 key로 저장해둔 토큰을 확인한다.
-        if(storedToken != null || !refreshToken.equals(storedToken)) {
+        String storedToken = redisUtil.getData(redisKey);
+        // ㄴ> RedisUtil.REFRESH_TOKEN_PREFIX + userId 형식으로 된 key로 저장해둔 토큰을 확인한다.
+        if(storedToken == null || !refreshToken.equals(storedToken)) {
             // refresh Token과 stored Token이 같지 않다면, 예외 발생
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 4. New accessToken, refreshToken 발급 (refresh 토큰 회전)
-        String newAccessToken = jwtProvider.createAccessToken(userId);
-        String newRefreshToken = jwtProvider.createRefreshToken(userId);
-        long exp
+        // 4. 쿠키에 저장된 refresh token의 expire 시간 추출
+        Date now = new Date();
+        long remainExpireTime = jwtProvider.getExpirationMiliSecond(refreshToken) - now.getTime();
 
+        // 현재 refresh token이 만료된 경우, 예외처리
+        if(remainExpireTime <= 0) {
+            throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        // 5. New accessToken, refreshToken 발급 (refresh 토큰 회전)
+        // 이전에 사용되던 refreshToken의 expireTime을 그대로 새로 생성된 refreshToken에도 적용시킨다.
+        String newAccessToken = jwtProvider.createAccessToken(userId);
+        String newRefreshToken = jwtProvider.createRefreshToken(userId, remainExpireTime);
+
+        // 6. redis에 저장된 refresh Token 값을 새롭게 발급한 refreshToken으로 교체
+        redisUtil.setData(redisKey, newRefreshToken, jwtProvider.getExpirationMiliSecond(newRefreshToken)/1000);
+
+        // 7. 응답 설정
         setAccessTokenHeader(response, newAccessToken);
+        setRefreshTokenHeader(response, newRefreshToken, jwtProvider.getExpirationMiliSecond(newRefreshToken)/1000);
     }
 
 
@@ -95,7 +165,7 @@ public class AuthService {
     @param request : http 요청 객체
     @return String : refreshToken
      */
-    private String getRefreshTokenFromCookie(HttpServletRequest request){
+    private String extractRefreshTokenFromCookie(HttpServletRequest request){
         if(request.getCookies() == null) return null; // 요청에 쿠키가 없으면
 
         for(Cookie cookie : request.getCookies()) {
@@ -133,12 +203,13 @@ public class AuthService {
     }
 
 
-    // redis에 refreshToken을 등록하고, response에 accessToken과 refreshToken Header를 설정하는 등, response 설정 함수
     /*
-        @param principal : CustomUserDetails 객체로, Authentication의 principal인 UserDetails 구현 객체이다.
-        @param response : Http 응답 객체
+    token 발급 및 response 설정 함수
+    redis에 refreshToken을 등록하고, response에 accessToken과 refreshToken Header를 설정
+    @param principal : CustomUserDetails 객체로, Authentication의 principal인 UserDetails 구현 객체이다.
+    @param response : Http 응답 객체
      */
-    private void setRefreshTokenToRedisAndSetResponse(CustomUserDetails principal, HttpServletResponse response){
+    private void issueTokensAndSetResponse(CustomUserDetails principal, HttpServletResponse response){
         // 해당 principal에서 userId를 얻어온다
         Long userId = principal.getUser().getUserId();
 
@@ -148,7 +219,8 @@ public class AuthService {
 
         // redis에 refreshToken 저장하기
         // key-userId & value-refreshToken
-        redisUtil.setData(String.valueOf(userId), refreshToken, jwtProvider.getExpirationMiliSecond(refreshToken));
+        String redisKey = RedisUtil.REFRESH_TOKEN_PREFIX + userId;
+        redisUtil.setData(redisKey, refreshToken, jwtProvider.getExpirationMiliSecond(refreshToken)/1000);
 
         // response Access Token Header 설정
         setAccessTokenHeader(response, accessToken);
@@ -179,7 +251,8 @@ public class AuthService {
                         .secure(false) // 로컬은 HTTP이므로 false 지정. HTTPS(운영)일 때는 true로 설정한다
                         .sameSite("Lax") //
                         .maxAge(Duration.ofSeconds(expireSeconds)); // 쿠키 유효시간 설정(refresh Token의 TTL와 동기화함. Duration.ZERO를 주면 즉시 만료(삭제) 쿠키로 사용 가능함)
-
+                            // ㄴ> Duration.ofSeconds() : 인자로 들어온 초만큼의 Duration 객체를 생성함
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.build().toString()); // cookiebuilder 객체를 build해서 String으로 바꾼 뒤, response의 헤더로 등록시킨다.
+        // ㄴ> "Set-Cookie" 헤더로 내려주면 브라우저가 자동으로 해당 쿠키를 저장한다. (프론트 - 다음 요청 때 쿠키가 자동 첨부됨)
     }
 }
