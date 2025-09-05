@@ -53,7 +53,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if(jwtProvider.validateToken(token)){  // access token에서 Jws<Claims> 객체로부터 Claims를 가져옴으로써 유효성을 검증하는 함수
                 // 4. JWT 토큰의 유효성이 검증되었다면, 해당 JWT access 토큰의 jti(jwt id)가 Redis의 블랙리스트에 있는지 확인한다.
                 // jwtProvider를 이용하여 해당 토큰의 jti를 얻어온 뒤, 해당 jti로 redis에 있는 블랙리스트로 등록되어있는지 여부를 확인한다.
-                if(redisUtil.isBlacklisted(jwtProvider.getTokenId(token))){
+                String jtiKey = RedisUtil.BLACKLIST_TOKEN_PREFIX + jwtProvider.getTokenId(token);
+                if(redisUtil.isBlacklisted(jtiKey)){
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access Token is blacklisted");
                         // 해당 토큰이 블랙리스트인 경우, response로 Error를 전송한다.
                     return;
